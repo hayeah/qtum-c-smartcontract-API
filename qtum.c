@@ -91,7 +91,8 @@ void decodeAddress(json_value* val, uint8_t* out, char** err) {
   }
 }
 
-void decodeHexData(json_value* val, uint8_t** ret, size_t* retsize, char** err) {
+void decodeHexData(json_value* val, uint8_t** ret, size_t* retsize,
+                   char** err) {
   if (val->type != json_string) {
     goto exit_err;
   }
@@ -99,7 +100,7 @@ void decodeHexData(json_value* val, uint8_t** ret, size_t* retsize, char** err) 
   size_t hexsize = val->u.string.length / 2;
   char* hexstr = val->u.string.ptr;
 
-  uint8_t* out = (uint8_t*) malloc(hexsize);
+  uint8_t* out = (uint8_t*)malloc(hexsize);
 
   if (!decodeHexString(hexstr, out, hexsize)) {
     free(out);
@@ -149,6 +150,20 @@ void qtum_context_configure(json_value* val, qtum_context* ctx, char** err) {
   }
 }
 
+void qtum_context_configure_db(qtum_context* ctx, char** err) {
+  leveldb_options_t* options = leveldb_options_create();
+  leveldb_options_set_create_if_missing(options, 1);
+
+  leveldb_t* db = leveldb_open(options, "contractdb", err);
+  free(options);
+
+  if (*err != NULL) {
+    return;
+  }
+
+  ctx->db = db;
+}
+
 qtum_context* qtum_context_open(int argc, char** argv, char** err) {
   if (argc < 2) {
     *err = errContextUnknownAction;
@@ -177,6 +192,12 @@ qtum_context* qtum_context_open(int argc, char** argv, char** err) {
       goto exit_err;
   }
 
+  // open contract store
+  qtum_context_configure_db(ctx, err);
+  if (*err != NULL) {
+    goto exit_err;
+  }
+
   if (argc == 3) {
     char* filename = argv[2];
 
@@ -190,13 +211,33 @@ qtum_context* qtum_context_open(int argc, char** argv, char** err) {
   return ctx;
 
 exit_err:
-  free(ctx);
+  qtum_context_close(ctx);
   return NULL;
 }
 
 void qtum_context_close(qtum_context* ctx) {
-  if (ctx->data == NULL) {
+  if (ctx->data != NULL) {
     free(ctx->data);
   }
+
+  if (ctx->db != NULL) {
+    leveldb_close(ctx->db);
+  }
+
   free(ctx);
+}
+
+void qtum_put(qtum_context* ctx, const char* key, size_t keylen,
+              const char* data, size_t datalen, char** err) {
+  leveldb_writeoptions_t* woptions = leveldb_writeoptions_create();
+  leveldb_put(ctx->db, woptions, key, keylen, data, datalen, err);
+  free(woptions);
+}
+
+char* qtum_get(qtum_context* ctx, const char* key, size_t keylen,
+               size_t* retlen, char** err) {
+  leveldb_readoptions_t* roptions = leveldb_readoptions_create();
+  char* retval = leveldb_get(ctx->db, roptions, key, keylen, retlen, err);
+  free(roptions);
+  return retval;
 }

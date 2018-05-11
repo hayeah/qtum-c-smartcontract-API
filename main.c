@@ -8,15 +8,45 @@
 #include "json.h"
 #include "qtum.h"
 
-void init(qtum_context* ctx, char** err) {}
+enum errcode { ERR_ABNORMAL = 1, ERR_FORBIDDEN = 2 };
 
-void handle(qtum_context* ctx, char** err) {
-  printHex((uint8_t*) &ctx->address, 20);
-  printHex((uint8_t*) &ctx->sender, 20);
-  printHex((uint8_t*) ctx->data, ctx->datasize);
+const char* keyOwner = "owner";
+
+int init(qtum_context* ctx, char** err) {
+  qtum_put(ctx, keyOwner, sizeof(keyOwner), ctx->sender, 20, err);
+
+  if (err != NULL) {
+    return ERR_ABNORMAL;
+  }
+
+  return 0;
 }
 
-enum errcode { ERR_ABNORMAL = 1 };
+int isOwner(qtum_context* ctx, char** err) {
+  size_t datalen;
+  char* owner = qtum_get(ctx, keyOwner, sizeof(keyOwner), &datalen, err);
+  int result = memcmp(owner, &ctx->sender, 20) == 0;
+  free(owner);
+  return result;
+}
+
+int handle(qtum_context* ctx, char** err) {
+  int authok = isOwner(ctx, err);
+  if (*err != NULL) {
+    return ERR_ABNORMAL;
+  }
+
+  if (!authok) {
+    *err = "Not contract owner";
+    return ERR_FORBIDDEN;
+  }
+
+  printHex((uint8_t*)&ctx->address, 20);
+  printHex((uint8_t*)&ctx->sender, 20);
+  printHex((uint8_t*)ctx->data, ctx->datasize);
+
+  return 0;
+}
 
 int main(int argc, char** argv) {
   char* err = NULL;

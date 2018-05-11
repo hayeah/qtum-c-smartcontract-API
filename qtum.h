@@ -2,6 +2,7 @@
 #define QTUM_SMARTCONTRACT_H
 
 #include <stdint.h>
+#include <leveldb/c.h>
 
 typedef enum qtum_action { QTUM_ACTION_INIT, QTUM_ACTION_CALL } qtum_action;
 
@@ -12,7 +13,15 @@ typedef struct qtum_context {
   uint64_t value;
   uint8_t* data;
   size_t datasize;
+
+  leveldb_t* db;
 } qtum_context;
+
+void qtum_put(qtum_context* ctx, const char* key, size_t keylen,
+              const char* data, size_t datalen, char** err);
+
+char* qtum_get(qtum_context* ctx, const char* key, size_t keylen,
+               size_t* retlen, char** err);
 
 int qtum_error(int errcode, const char* err);
 
