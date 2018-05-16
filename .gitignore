@@ -1,0 +1,3 @@
+.contractdb/
+*.o
+*.dylib
