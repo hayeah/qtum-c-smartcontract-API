@@ -7,6 +7,8 @@
 #include "json.h"
 #include "qtum.h"
 
+const char* CONTRACT_DB_PATH = ".contractdb";
+
 char* errContextMallocFail = "Failed to allocate context";
 char* errContextUnknownAction = "Unknown context action";
 char* errContextFileOpenError = "Failed to open context file";
@@ -154,7 +156,7 @@ void qtum_context_configure_db(qtum_context* ctx, char** err) {
   leveldb_options_t* options = leveldb_options_create();
   leveldb_options_set_create_if_missing(options, 1);
 
-  leveldb_t* db = leveldb_open(options, "contractdb", err);
+  leveldb_t* db = leveldb_open(options, CONTRACT_DB_PATH, err);
   free(options);
 
   if (*err != NULL) {
