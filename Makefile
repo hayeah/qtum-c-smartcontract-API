@@ -1,7 +1,7 @@
-TARGET = main
+TARGET = qtum.dylib
 LIBS = -lleveldb
-CC = gcc
-CFLAGS = -g -Wall
+CC = cc
+CFLAGS = -g -Wall -fPIC
 
 .PHONY: default all clean
 
@@ -18,6 +18,9 @@ HEADERS = $(wildcard *.h)
 
 $(TARGET): $(OBJECTS)
 		$(CC) $(OBJECTS) -Wall $(LIBS) -o $@
+
+qtum.dylib: $(OBJECTS)
+	$(CC) $(CFLAGS) $(LIBS) -dynamiclib -o $@ $^
 
 clean:
 		rm -f *.o

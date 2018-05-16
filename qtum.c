@@ -164,48 +164,48 @@ void qtum_context_configure_db(qtum_context* ctx, char** err) {
   ctx->db = db;
 }
 
-qtum_context* qtum_context_open(int argc, char** argv, char** err) {
+qtum_context* qtum_context_open(int argc, char** argv, qtum_err** err) {
   if (argc < 2) {
-    *err = errContextUnknownAction;
+    *err =
+        qtum_err_new(QERR_INVALID_CONTEXT, "Context action is not specified");
     return NULL;
   }
 
   qtum_context* ctx = (qtum_context*)malloc(sizeof(qtum_context));
-  memset(ctx, 0, sizeof(qtum_context));
-
   if (ctx == NULL) {
-    *err = errContextMallocFail;
-    return NULL;
+    exit(QERR_OOM);
   }
+
+  memset(ctx, 0, sizeof(qtum_context));
 
   char* action = argv[1];
 
-  switch (action[0]) {
-    case 'i':  // "init"
-      ctx->action = QTUM_ACTION_INIT;
-      break;
-    case 'c':  // "call"
-      ctx->action = QTUM_ACTION_CALL;
-      break;
-    default:
-      *err = errContextUnknownAction;
-      goto exit_err;
-  }
-
-  // open contract store
-  qtum_context_configure_db(ctx, err);
-  if (*err != NULL) {
+  if (strcmp(action, "init") == 0) {
+    ctx->action = QTUM_ACTION_INIT;
+  } else if (strcmp(action, "call") == 0) {
+    ctx->action = QTUM_ACTION_CALL;
+  } else {
+    *err = qtum_err_fmt(QERR_INVALID_CONTEXT, "Invalid action: %s", action);
     goto exit_err;
   }
 
-  if (argc == 3) {
+  char* serr = NULL;
+  if (argc >= 3) {
     char* filename = argv[2];
 
-    qtum_context_configure_by_jsonfile(ctx, filename, err);
+    qtum_context_configure_by_jsonfile(ctx, filename, &serr);
 
-    if (*err != NULL) {
+    if (serr != NULL) {
+      *err = qtum_err_new(QERR_INVALID_CONTEXT, serr);
       goto exit_err;
     }
+  }
+
+  // open contract store
+  qtum_context_configure_db(ctx, &serr);
+  if (serr != NULL) {
+    *err = qtum_err_new(QERR_STORAGE, serr);
+    goto exit_err;
   }
 
   return ctx;
@@ -240,4 +240,69 @@ char* qtum_get(qtum_context* ctx, const char* key, size_t keylen,
   char* retval = leveldb_get(ctx->db, roptions, key, keylen, retlen, err);
   free(roptions);
   return retval;
+}
+
+qtum_err* qtum_err_fmt(qtum_errcode code, const char* fmt, ...) {
+  qtum_err* err = malloc(sizeof(qtum_err));
+  if (err == NULL) {
+    exit(QERR_OOM);
+  }
+
+  err->code = code;
+  err->message = NULL;
+
+  va_list args;
+  va_start(args, fmt);
+
+  int msgsize = vsnprintf(NULL, 0, fmt, args);
+  if (msgsize <= 0) {
+    return err;
+  }
+
+  char* msg = malloc(msgsize);
+  if (msg == NULL) {
+    exit(QERR_OOM);
+  }
+
+  va_start(args, fmt);
+  vsprintf(msg, fmt, args);
+  va_end(args);
+
+  err->message = msg;
+
+  return err;
+}
+
+qtum_err* qtum_err_new(qtum_errcode code, const char* msg) {
+  qtum_err* err = malloc(sizeof(qtum_err));
+  if (err == NULL) {
+    exit(QERR_OOM);
+  }
+
+  err->code = code;
+  err->message = NULL;
+
+  if (msg == NULL) {
+    return err;
+  }
+
+  size_t size = strlen(msg);
+  char* errmsg = malloc(size);
+  if (errmsg == NULL) {
+    exit(QERR_OOM);
+  }
+
+  memcpy(errmsg, msg, size);
+
+  err->message = errmsg;
+
+  return err;
+}
+
+void qtum_err_free(qtum_err* err) {
+  if (err->message != NULL) {
+    free(err->message);
+  }
+
+  free(err);
 }
