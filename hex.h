@@ -4,6 +4,6 @@
 #include "stdint.h"
 
 extern int decodeHexString(char *inhex, uint8_t *out, size_t len);
-char *bytesToHexString(uint8_t *bytes, size_t buflen);
+char *bytesToHexString(const uint8_t *bytes, size_t buflen);
 
 #endif

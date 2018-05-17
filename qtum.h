@@ -39,7 +39,8 @@ extern void qtum_put(qtum_context* ctx, const uint8_t* key, size_t keylen,
 extern uint8_t* qtum_get(qtum_context* ctx, const uint8_t* key, size_t keylen,
                          size_t* retlen, qtum_err** err);
 
-extern void qtum_exit_error(const qtum_err* err);
+extern void qtum_exit_return(uint8_t* data, size_t datalen);
+extern void qtum_exit_error(qtum_err* err);
 
 extern qtum_context* qtum_context_open(int argc, char** argv, qtum_err** err);
 extern void qtum_context_close(qtum_context* ctx);

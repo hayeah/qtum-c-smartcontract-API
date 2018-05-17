@@ -44,7 +44,7 @@ static char nibbleToChar(uint8_t nibble) {
 }
 
 /* Convert a buffer of binary values into a hex string representation */
-char *bytesToHexString(uint8_t *bytes, size_t buflen) {
+char *bytesToHexString(const uint8_t *bytes, size_t buflen) {
   char *retval;
   int i;
 

@@ -22,10 +22,19 @@ void qtum_context_configure(json_value* val, qtum_context* ctx, char** err);
 void qtum_context_configure_by_jsonfile(qtum_context* ctx, const char* filename,
                                         char** err);
 
-void qtum_exit_error(const qtum_err* err) {
+void qtum_exit_error(qtum_err* err) {
   int code = err->code;
   printf("[%d] %s\n", code, err->message);
+  qtum_err_free(err);
   exit(code);
+}
+
+void qtum_exit_return(uint8_t* data, size_t datalen) {
+  char* hexStr = bytesToHexString(data, datalen);
+  printf("exit with %zu bytes of data:\n%s\n", datalen, hexStr);
+  free(hexStr);
+  free(data);
+  exit(0);
 }
 
 void qtum_context_configure_by_jsonfile(qtum_context* ctx, const char* filename,
@@ -246,6 +255,7 @@ void qtum_put(qtum_context* ctx, const uint8_t* key, size_t keylen,
 uint8_t* qtum_get(qtum_context* ctx, const uint8_t* key, size_t keylen,
                   size_t* retlen, qtum_err** qerr) {
   leveldb_readoptions_t* roptions = leveldb_readoptions_create();
+
   char* err = NULL;
   uint8_t* retval = (uint8_t*)leveldb_get(ctx->db, roptions, (char*)key, keylen,
                                           retlen, &err);
@@ -253,6 +263,13 @@ uint8_t* qtum_get(qtum_context* ctx, const uint8_t* key, size_t keylen,
 
   if (err) {
     *qerr = qtum_err_new(QERR_STORAGE, err);
+  }
+
+  if (retval == NULL) {
+    char* keyhex = (char*)bytesToHexString(key, keylen);
+    *qerr = qtum_err_fmt(QERR_STORAGE,
+                         "qtum_get: storage key does not exist '%s'", keyhex);
+    free(keyhex);
   }
 
   return retval;
