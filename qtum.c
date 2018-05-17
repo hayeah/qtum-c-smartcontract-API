@@ -22,9 +22,10 @@ void qtum_context_configure(json_value* val, qtum_context* ctx, char** err);
 void qtum_context_configure_by_jsonfile(qtum_context* ctx, const char* filename,
                                         char** err);
 
-int qtum_error(int errcode, const char* err) {
-  printf("[%d] %s\n", errcode, err);
-  return errcode;
+void qtum_exit_error(const qtum_err* err) {
+  int code = err->code;
+  printf("[%d] %s\n", code, err->message);
+  exit(code);
 }
 
 void qtum_context_configure_by_jsonfile(qtum_context* ctx, const char* filename,
@@ -230,18 +231,30 @@ void qtum_context_close(qtum_context* ctx) {
 }
 
 void qtum_put(qtum_context* ctx, const uint8_t* key, size_t keylen,
-              const uint8_t* data, size_t datalen, char** err) {
+              const uint8_t* data, size_t datalen, qtum_err** qerr) {
+  char* err = NULL;
   leveldb_writeoptions_t* woptions = leveldb_writeoptions_create();
-  leveldb_put(ctx->db, woptions, (char*)key, keylen, (char*)data, datalen, err);
+  leveldb_put(ctx->db, woptions, (char*)key, keylen, (char*)data, datalen,
+              &err);
   free(woptions);
+
+  if (err) {
+    *qerr = qtum_err_new(QERR_STORAGE, err);
+  }
 }
 
 uint8_t* qtum_get(qtum_context* ctx, const uint8_t* key, size_t keylen,
-                  size_t* retlen, char** err) {
+                  size_t* retlen, qtum_err** qerr) {
   leveldb_readoptions_t* roptions = leveldb_readoptions_create();
-  uint8_t* retval =
-      (uint8_t*)leveldb_get(ctx->db, roptions, (char*)key, keylen, retlen, err);
+  char* err = NULL;
+  uint8_t* retval = (uint8_t*)leveldb_get(ctx->db, roptions, (char*)key, keylen,
+                                          retlen, &err);
   free(roptions);
+
+  if (err) {
+    *qerr = qtum_err_new(QERR_STORAGE, err);
+  }
+
   return retval;
 }
 

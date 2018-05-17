@@ -4,12 +4,16 @@
 #include <leveldb/c.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include "hex.h"
+
+#define ADDRESS_SIZE 20
 
 typedef enum qtum_action { QTUM_ACTION_INIT, QTUM_ACTION_CALL } qtum_action;
 
 typedef enum {
-  QERR_INVALID_CONTEXT = 1,
-  QERR_STORAGE,
+  QERR_GENERAL = 1,
+  QERR_INVALID_CONTEXT = 100,
+  QERR_STORAGE = 101,
   QERR_OOM = 255,
 } qtum_errcode;
 
@@ -20,8 +24,8 @@ typedef struct qtum_err {
 
 typedef struct qtum_context {
   qtum_action action;
-  char address[20];
-  char sender[20];
+  uint8_t address[ADDRESS_SIZE];
+  uint8_t sender[ADDRESS_SIZE];
   uint64_t value;
   uint8_t* data;
   size_t datasize;
@@ -30,12 +34,12 @@ typedef struct qtum_context {
 } qtum_context;
 
 extern void qtum_put(qtum_context* ctx, const uint8_t* key, size_t keylen,
-                     const uint8_t* data, size_t datalen, char** err);
+                     const uint8_t* data, size_t datalen, qtum_err** err);
 
 extern uint8_t* qtum_get(qtum_context* ctx, const uint8_t* key, size_t keylen,
-                         size_t* retlen, char** err);
+                         size_t* retlen, qtum_err** err);
 
-extern int qtum_error(int errcode, const char* err);
+extern void qtum_exit_error(const qtum_err* err);
 
 extern qtum_context* qtum_context_open(int argc, char** argv, qtum_err** err);
 extern void qtum_context_close(qtum_context* ctx);
