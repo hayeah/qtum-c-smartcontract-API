@@ -92,7 +92,6 @@ class Context {
   bool isCall() const { return ctx->action == QTUM_ACTION_CALL; }
 
   std::unique_ptr<Error> put(string key, const uint8_t* data, size_t len) {
-    // FIXME: change API to qtum_err
     qtum_err* err = nullptr;
 
     qtum_put(ctx, (uint8_t*)key.data(), key.length(), data, len, &err);
@@ -111,7 +110,6 @@ class Context {
   }
 
   std::tuple<uint8_t*, size_t, std::unique_ptr<Error>> get(string key) {
-    // FIXME: change API to qtum_err
     qtum_err* err = nullptr;
     size_t retlen;
     uint8_t* data =
