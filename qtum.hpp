@@ -34,7 +34,7 @@ class Error {
   Error(qtum_err* err) : code(err->code), message(err->message){};
 };
 
-void error_exit(const Error& err) {
+void exit_error(const Error& err) {
   std::cout << "error: " << err.message << std::endl;
   exit(err.code);
 }
@@ -93,13 +93,13 @@ class Context {
 
   std::unique_ptr<Error> put(string key, const uint8_t* data, size_t len) {
     // FIXME: change API to qtum_err
-    char* err;
+    qtum_err* err = nullptr;
 
     qtum_put(ctx, (uint8_t*)key.data(), key.length(), data, len, &err);
 
     if (err != nullptr) {
-      auto qerr = error(1, err);
-      free(err);
+      auto qerr = error(err);
+      qtum_err_free(err);
       return qerr;
     }
 
@@ -112,14 +112,14 @@ class Context {
 
   std::tuple<uint8_t*, size_t, std::unique_ptr<Error>> get(string key) {
     // FIXME: change API to qtum_err
-    char* err = nullptr;
+    qtum_err* err = nullptr;
     size_t retlen;
     uint8_t* data =
         qtum_get(ctx, (uint8_t*)key.data(), key.length(), &retlen, &err);
 
     if (err != nullptr) {
-      auto qerr = error(1, err);
-      free(err);
+      auto qerr = error(err);
+      qtum_err_free(err);
       return {nullptr, 0, std::move(qerr)};
     }
 
