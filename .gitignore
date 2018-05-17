@@ -1,3 +1,4 @@
 .contractdb/
 *.o
 *.dylib
+main

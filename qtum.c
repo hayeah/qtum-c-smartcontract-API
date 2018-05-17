@@ -229,17 +229,18 @@ void qtum_context_close(qtum_context* ctx) {
   free(ctx);
 }
 
-void qtum_put(qtum_context* ctx, const char* key, size_t keylen,
-              const char* data, size_t datalen, char** err) {
+void qtum_put(qtum_context* ctx, const uint8_t* key, size_t keylen,
+              const uint8_t* data, size_t datalen, char** err) {
   leveldb_writeoptions_t* woptions = leveldb_writeoptions_create();
-  leveldb_put(ctx->db, woptions, key, keylen, data, datalen, err);
+  leveldb_put(ctx->db, woptions, (char*)key, keylen, (char*)data, datalen, err);
   free(woptions);
 }
 
-char* qtum_get(qtum_context* ctx, const char* key, size_t keylen,
-               size_t* retlen, char** err) {
+uint8_t* qtum_get(qtum_context* ctx, const uint8_t* key, size_t keylen,
+                  size_t* retlen, char** err) {
   leveldb_readoptions_t* roptions = leveldb_readoptions_create();
-  char* retval = leveldb_get(ctx->db, roptions, key, keylen, retlen, err);
+  uint8_t* retval =
+      (uint8_t*)leveldb_get(ctx->db, roptions, (char*)key, keylen, retlen, err);
   free(roptions);
   return retval;
 }

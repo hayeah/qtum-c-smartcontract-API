@@ -29,11 +29,11 @@ typedef struct qtum_context {
   leveldb_t* db;
 } qtum_context;
 
-extern void qtum_put(qtum_context* ctx, const char* key, size_t keylen,
-                     const char* data, size_t datalen, char** err);
+extern void qtum_put(qtum_context* ctx, const uint8_t* key, size_t keylen,
+                     const uint8_t* data, size_t datalen, char** err);
 
-extern char* qtum_get(qtum_context* ctx, const char* key, size_t keylen,
-                      size_t* retlen, char** err);
+extern uint8_t* qtum_get(qtum_context* ctx, const uint8_t* key, size_t keylen,
+                         size_t* retlen, char** err);
 
 extern int qtum_error(int errcode, const char* err);
 

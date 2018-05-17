@@ -4,10 +4,26 @@
 
 #include "qtum.hpp"
 
-// use qtum;
+const auto kOwner = std::string("owner");
 
-void init(qtum::Context& ctx) {}
-void handle(qtum::Context& ctx) {}
+void init(qtum::Context& ctx) {
+  // Set address owner;
+  auto err = ctx.put(kOwner, ctx.sender);
+  if (err) {
+    qtum::error_exit(*err);
+  }
+}
+void handle(qtum::Context& ctx) {
+  auto err = std::unique_ptr<qtum::Error>{};
+  auto owner = std::unique_ptr<qtum::Address>{};
+
+  std::tie(owner, err) = ctx.getAddress(kOwner);
+  if (err) {
+    qtum::error_exit(*err);
+  }
+
+  std::cout << "owner:" << owner->hexstr() << std::endl;
+}
 
 int main(int argc, char const* argv[]) {
   auto err = std::unique_ptr<qtum::Error>{};
@@ -17,6 +33,12 @@ int main(int argc, char const* argv[]) {
   if (err) {
     qtum::error_exit(*err);
   }
+
+  auto& sender = ctx->sender;
+  auto& address = ctx->address;
+
+  std::cout << "contract:" << address.hexstr() << std::endl;
+  std::cout << "sender:" << sender.hexstr() << std::endl;
 
   if (ctx->isInit()) {
     init(*ctx);
