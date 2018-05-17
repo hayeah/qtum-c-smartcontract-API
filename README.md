@@ -4,6 +4,11 @@ We'd like to make the smart contract API to resemble a standard program with a `
 
 If a smart contract is just a "main" program, we could write an emulation library for the smart contract so developers can debug the program offchain using standard toolings like gdb and lldb.
 
+The example contracts are:
+
++ [c](contracts/c)
++ [c++](contracts/cpp)
+
 ## Transaction Context
 
 The special `qtum_context` object encapsulates the execution context of a transaction:
@@ -21,12 +26,10 @@ The `qtum_context_open` function initializes the context object:
 #include "qtum.h"
 
 int main(int argc, char** argv) {
-  char* err = NULL;
+  qtum_err* err = NULL;
   qtum_context* ctx = qtum_context_open(argc, argv, &err);
 
   // ...
-
-  qtum_context_close(ctx);
 }
 ```
 
@@ -37,12 +40,11 @@ The context struct:
 ```c
 typedef struct qtum_context {
   qtum_action action;
-  char address[20];
-  char sender[20];
+  uint8_t address[ADDRESS_SIZE];
+  uint8_t sender[ADDRESS_SIZE];
   uint64_t value;
-
-  size_t datasize;
   uint8_t* data;
+  size_t datasize;
 
   // ...other internal fields
 } qtum_context;
@@ -81,8 +83,7 @@ contract CheckOwner {
   }
 
   function handle() {
-    require(owner == msg.sender);
-
+    log(owner);
     // ...
   }
 }
@@ -119,50 +120,59 @@ switch (ctx->action) {
 The storage API is similar to leveldb's `put` and `get` API.
 
 ```c
-void qtum_put(qtum_context* ctx, const char* key, size_t keylen,
-              const char* data, size_t datalen, char** err);
+extern void qtum_put(qtum_context* ctx, const uint8_t* key, size_t keylen,
+                     const uint8_t* data, size_t datalen, qtum_err** err);
 
-char* qtum_get(qtum_context* ctx, const char* key, size_t keylen,
-               size_t* retlen, char** err);
+extern uint8_t* qtum_get(qtum_context* ctx, const uint8_t* key, size_t keylen,
+                         size_t* retlen, qtum_err** err);
 ```
 
 Here's an example for setting the contract owner in `init`:
 
 ```c
-int init(qtum_context* ctx, char** err) {
-  qtum_put(ctx, keyOwner, sizeof(keyOwner), ctx->sender, 20, err);
+void init(qtum_context* ctx) {
+  qtum_err* err = NULL;
+  qtum_put(ctx, keyOwner, sizeof(keyOwner), ctx->sender, ADDRESS_SIZE, &err);
+  if (err) qtum_exit_error(err);
 
-  if (*err != NULL) {
-    return ERR_ABNORMAL;
-  }
-
-  return 0;
+  printf("put owner: %s\n", bytesToHexString(ctx->sender, ADDRESS_SIZE));
 }
 ```
 
-And when handling a "sendtocontract" transaction, we could check the contract ownership:
+And when handling a send/call invokation, we could check the contract ownership by getting the stored owner:
 
 ```c
-int isOwner(qtum_context* ctx, char** err) {
+void handle(qtum_context* ctx) {
+  qtum_err* err = NULL;
+
   size_t datalen;
-  char* owner = qtum_get(ctx, keyOwner, sizeof(keyOwner), &datalen, err);
-  int result = memcmp(owner, &ctx->sender, 20) == 0;
-  free(owner);
-  return result;
+  uint8_t* owner = qtum_get(ctx, keyOwner, sizeof(keyOwner), &datalen, &err);
+  if (err) qtum_exit_error(err);
+
+  printf("get owner: %s\n", bytesToHexString(owner, ADDRESS_SIZE));
+}
+```
+
+## C++ API
+
+The C++ smart contract API uses "exception free" style. The API methods return results along with possible err values.
+
+```cpp
+void init(qtum::Context& ctx) {
+  auto err = ctx.put(kOwner, ctx.sender);
+  if (err) qtum::exit_error(*err);
+
+  std::cout << "put owner: " << ctx.sender.hexstr() << std::endl;
 }
 
-int handle(qtum_context* ctx, char** err) {
-  int authok = isOwner(ctx, err);
-  if (*err != NULL) {
-    return ERR_ABNORMAL;
-  }
+void handle(qtum::Context& ctx) {
+  auto err = std::unique_ptr<qtum::Error>{};
+  auto owner = std::unique_ptr<qtum::Address>{};
 
-  if (!authok) {
-    *err = "Not contract owner";
-    return ERR_FORBIDDEN;
-  }
+  std::tie(owner, err) = ctx.getAddress(kOwner);
+  if (err) qtum::exit_error(*err);
 
-  ...
+  std::cout << "get owner: " << owner->hexstr() << std::endl;
 }
 ```
 
