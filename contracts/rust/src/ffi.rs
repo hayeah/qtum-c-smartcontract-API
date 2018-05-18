@@ -1,3 +1,5 @@
+use libc;
+
 use std;
 use std::os::raw::c_char;
 
@@ -8,16 +10,33 @@ extern "C" {
     pub fn qtum_context_open(
         argc: i32,
         argv: *const *const c_char,
-        err: *mut *mut qtum_err,
+        err: *mut *const qtum_err,
     ) -> *mut qtum_ctx;
     pub fn qtum_context_close(ctx: *mut qtum_ctx);
-    pub fn qtum_err_free(err: *mut qtum_err);
+    pub fn qtum_err_free(err: *const qtum_err);
+
+    pub fn qtum_put(
+        ctx: *const qtum_ctx,
+        key: *const u8,
+        keylen: libc::size_t,
+        data: *const u8,
+        datalen: libc::size_t,
+        err: *mut *const qtum_err,
+    );
+
+    pub fn qtum_get(
+        ctx: *const qtum_ctx,
+        key: *const u8,
+        keylen: libc::size_t,
+        retlen: *mut libc::size_t,
+        err: *mut *const qtum_err,
+    ) -> *const u8;
 }
 
 #[repr(C)]
 pub struct qtum_err {
     pub code: u32,
-    pub message: *mut u8,
+    pub message: *mut c_char,
 }
 
 impl Default for qtum_err {

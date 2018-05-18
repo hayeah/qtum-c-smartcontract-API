@@ -1,4 +1,5 @@
 extern crate hex;
+extern crate libc;
 
 mod ffi;
 mod qtum;
@@ -6,15 +7,26 @@ mod qtum;
 use qtum::*;
 
 fn init(ctx: Context) -> Result<(), Error> {
-    Ok(())
+    return ctx.put("owner", ctx.address.data.as_ref());
 }
 
 fn handle(ctx: Context) -> Result<(), Error> {
-    Ok(())
+    match ctx.get("owner") {
+        Ok(data) => {
+            let owner = Address { data: data };
+            println!("owner: {:?}", owner);
+            return Ok(());
+        },
+        Err(err) => {
+            return Err(err);
+        }
+    }
 }
 
 fn run() -> Result<(), Error> {
     let ctx = Context::open()?;
+
+    println!("{:?}", ctx);
 
     match ctx.action {
         Action::InitAction => init(ctx),

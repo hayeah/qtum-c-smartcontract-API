@@ -6,6 +6,8 @@ use std;
 use std::ffi::CString;
 use std::os::raw::c_char;
 
+use libc;
+
 pub use ffi::Action;
 
 #[derive(Debug)]
@@ -34,20 +36,12 @@ impl Context {
 
         let argps: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
 
-        let mut err: *mut qtum_err = std::ptr::null_mut();
+        let mut err: *const qtum_err = std::ptr::null_mut();
 
         unsafe {
             let ctx = qtum_context_open(args.len() as i32, argps.as_ptr(), &mut err);
             if !err.is_null() {
-                let msg = CString::from_raw((*err).message as *mut i8);
-
-                let rerr = Error {
-                    code: (*err).code,
-                    message: msg.into_string().unwrap(),
-                };
-
-                qtum_err_free(err);
-                return Err(rerr);
+                return Err(Error::from_c(err));
             }
 
             return Ok(Context {
@@ -58,6 +52,44 @@ impl Context {
             });
         }
     }
+
+    // can i support &str using Into [u8]?
+    pub fn put(&self, key: &str, data: &[u8]) -> Result<(), Error> {
+        let mut err: *const qtum_err = std::ptr::null();
+
+        unsafe {
+            qtum_put(self.ctx, key.as_ptr(), key.len(), data.as_ptr(), data.len(), &mut err);
+
+            if !err.is_null() {
+                return Err(Error::from_c(err));
+            }
+
+            return Ok(());
+        }
+    }
+
+    pub fn get(&self, key: &str) -> Result<Vec<u8>, Error> {
+        let mut err: *const qtum_err = std::ptr::null();
+
+        unsafe {
+            let mut retlen: libc::size_t = 0;
+            let cdata = qtum_get(self.ctx, key.as_ptr(), key.len(), &mut retlen, &mut err);
+
+            if !err.is_null() {
+                return Err(Error::from_c(err));
+            }
+
+            // TODO free data
+            // qtum_free(data);
+
+            let mut data: Vec<u8> = Vec::with_capacity(retlen);
+            data.set_len(retlen);
+            std::ptr::copy(cdata, data.as_mut_ptr(), retlen);
+            return Ok(data);
+
+        }
+
+    }
 }
 
 #[derive(Debug)]
@@ -66,12 +98,35 @@ pub struct Error {
     message: String,
 }
 
+impl Error {
+    fn from_c(err: *const qtum_err) -> Error {
+        unsafe {
+            let msg = CString::from_raw((*err).message);
+
+            let str = msg.clone().into_string().unwrap();
+
+            let rerr = Error {
+                code: (*err).code,
+                message: str,
+            };
+
+            // release ownership to err->message pointer
+            msg.into_raw();
+
+            qtum_err_free(err);
+
+            return rerr;
+        }
+
+    }
+}
+
 pub struct Address {
-    data: Vec<u8>,
+    pub data: Vec<u8>,
 }
 
 impl Address {
-    fn new(data: &[u8; 20]) -> Address {
+    pub fn new(data: &[u8; 20]) -> Address {
         Address { data: data.to_vec() }
     }
 }
