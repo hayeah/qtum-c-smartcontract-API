@@ -6,6 +6,8 @@ use std;
 use std::ffi::CString;
 use std::os::raw::c_char;
 
+pub use ffi::Action;
+
 #[derive(Debug)]
 pub struct Context {
     pub action: Action,

@@ -28,8 +28,10 @@ impl Default for qtum_err {
 #[repr(i32)]
 #[derive(Debug, Clone, Copy)]
 pub enum Action {
-  InitAction,
-  CallAction,
+    #[allow(dead_code)]
+    InitAction,
+    #[allow(dead_code)]
+    CallAction,
 }
 
 #[repr(C)]
