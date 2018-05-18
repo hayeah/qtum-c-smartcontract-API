@@ -8,6 +8,7 @@ The example contracts are:
 
 + [c](contracts/c)
 + [c++](contracts/cpp)
++ [rust](contracts/rust)
 
 ## Transaction Context
 
