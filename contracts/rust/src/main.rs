@@ -7,14 +7,15 @@ mod qtum;
 use qtum::*;
 
 fn init(ctx: Context) -> Result<(), Error> {
-    return ctx.put("owner", ctx.address.data.as_ref());
+    println!("set owner: {:?}", ctx.sender);
+    return ctx.put("owner", ctx.sender.data.as_ref());
 }
 
 fn handle(ctx: Context) -> Result<(), Error> {
     match ctx.get("owner") {
         Ok(data) => {
             let owner = Address { data: data };
-            println!("owner: {:?}", owner);
+            println!("get owner: {:?}", owner);
             return Ok(());
         },
         Err(err) => {
@@ -39,7 +40,7 @@ fn main() {
         println!("err: {:?}", err);
     }
 
-    unsafe {
-        ffi::qtum_print_version();
-    }
+//    unsafe {
+//        ffi::qtum_print_version();
+//    }
 }

@@ -341,3 +341,5 @@ void qtum_err_free(qtum_err* err) {
 
   free(err);
 }
+
+void qtum_free_get_data(void* ptr) { leveldb_free(ptr); }

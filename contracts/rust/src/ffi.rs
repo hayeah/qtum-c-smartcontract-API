@@ -31,6 +31,8 @@ extern "C" {
         retlen: *mut libc::size_t,
         err: *mut *const qtum_err,
     ) -> *const u8;
+
+    pub fn qtum_free_get_data(ptr: *const u8);
 }
 
 #[repr(C)]

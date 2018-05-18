@@ -79,12 +79,13 @@ impl Context {
                 return Err(Error::from_c(err));
             }
 
-            // TODO free data
-            // qtum_free(data);
 
             let mut data: Vec<u8> = Vec::with_capacity(retlen);
             data.set_len(retlen);
             std::ptr::copy(cdata, data.as_mut_ptr(), retlen);
+
+            qtum_free_get_data(cdata);
+
             return Ok(data);
 
         }
