@@ -7,6 +7,8 @@
 #include "json.h"
 #include "qtum.h"
 
+extern void qtum_print_version() { printf("qtum smart contract 0.0.1\n"); }
+
 const char* CONTRACT_DB_PATH = ".contractdb";
 
 char* errContextMallocFail = "Failed to allocate context";

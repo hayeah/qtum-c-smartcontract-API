@@ -22,6 +22,9 @@ $(TARGET): $(OBJECTS)
 qtum.dylib: $(OBJECTS)
 	$(CC) $(CFLAGS) $(LIBS) -dynamiclib -o $@ $^
 
+libqtum.a: qtum.o
+	libtool -static -o libqtum.a qtum.o json.o hex.o
+
 clean:
 		rm -f *.o
 		rm -f $(TARGET)

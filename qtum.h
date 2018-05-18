@@ -15,6 +15,8 @@ typedef enum {
   QERR_INVALID_CONTEXT = 100,
   QERR_STORAGE = 101,
   QERR_OOM = 255,
+
+  QERR_MAX = INT32_MAX,
 } qtum_errcode;
 
 typedef struct qtum_err {
@@ -49,5 +51,6 @@ extern qtum_err* qtum_err_fmt(qtum_errcode code, const char* fmt, ...);
 // copies message string to an allocated struct
 extern qtum_err* qtum_err_new(qtum_errcode code, const char* msg);
 extern void qtum_err_free(qtum_err* err);
+extern void qtum_print_version();
 
 #endif
