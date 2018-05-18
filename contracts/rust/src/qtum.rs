@@ -28,11 +28,11 @@ impl Drop for Context {
 
 impl Context {
     pub fn open() -> Result<Context, Error> {
-        let args : Vec<CString> = std::env::args().map(|str|
-            std::ffi::CString::new(str).unwrap()
-        ).collect();
+        let args: Vec<CString> = std::env::args()
+            .map(|str| std::ffi::CString::new(str).unwrap())
+            .collect();
 
-        let argps : Vec<*const c_char> = args.iter().map(|s| s.as_ptr() ).collect();
+        let argps: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
 
         let mut err: *mut qtum_err = std::ptr::null_mut();
 
@@ -41,7 +41,7 @@ impl Context {
             if !err.is_null() {
                 let msg = CString::from_raw((*err).message as *mut i8);
 
-                let rerr = Error{
+                let rerr = Error {
                     code: (*err).code,
                     message: msg.into_string().unwrap(),
                 };
@@ -72,7 +72,7 @@ pub struct Address {
 
 impl Address {
     fn new(data: &[u8; 20]) -> Address {
-        Address{data:data.to_vec()}
+        Address { data: data.to_vec() }
     }
 }
 
