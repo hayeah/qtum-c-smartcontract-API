@@ -60,11 +60,14 @@ In an emulated off-chain execution environment, we could load the context from a
 The debugging context can be specified as a JSON file:
 
 ```
-[
-  "aa00000000000000000000000000000000112233",
-  "bb00000000000000000000000000000000223344",
-  "000000000000000011"
-]
+{
+  // contract address
+  "address": "aa00000000000000000000000000000000112233",
+  // sender address
+  "sender": "bb00000000000000000000000000000000223344",
+  // call data
+  "data": "aabb"
+}
 ```
 
 + contract address

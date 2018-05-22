@@ -135,7 +135,51 @@ exit_err:
   return;
 }
 
+const char* kContractAddress = "address";
+const char* kSender = "sender";
+const char* kCallData = "data";
+
+void qtum_context_configure_with_object(json_value* val, qtum_context* ctx,
+                                        char** err) {
+  if (val->type != json_object) {
+    *err = errContextFileInvalid;
+    return;
+  }
+
+  // TODO check if contract and sender are set
+
+  for (int i = 0; i < val->u.object.length; i++) {
+    json_object_entry entry = val->u.object.values[i];
+    json_value* entryval = entry.value;
+
+    if (memcmp(kContractAddress, entry.name, entry.name_length) == 0) {
+      decodeAddress(entryval, (uint8_t*)ctx->address, err);
+      if (*err != NULL) {
+        *err = "Invalid contract address";
+        return;
+      }
+    } else if (memcmp(kSender, entry.name, entry.name_length) == 0) {
+      decodeAddress(entryval, (uint8_t*)ctx->sender, err);
+      if (*err != NULL) {
+        *err = "Invalid sender address";
+        return;
+      }
+    } else if (memcmp(kCallData, entry.name, entry.name_length) == 0) {
+      decodeHexData(entryval, &ctx->data, &ctx->datasize, err);
+      if (*err != NULL) {
+        *err = "Invalid call data";
+        return;
+      }
+    }
+  }
+}
+
 void qtum_context_configure(json_value* val, qtum_context* ctx, char** err) {
+  if (val->type == json_object) {
+    qtum_context_configure_with_object(val, ctx, err);
+    return;
+  }
+
   if (val->type != json_array) {
     *err = errContextFileInvalid;
     return;
