@@ -68,7 +68,12 @@ void qtum_context_configure_by_jsonfile(qtum_context* ctx, const char* filename,
     goto exit_fileContent;
   }
 
-  json_value* val = json_parse(fileContent, fsize);
+  json_settings config = {0};
+  config.settings |= json_enable_comments;
+
+  char parse_error[256];
+  json_value* val = json_parse_ex(&config, fileContent, fsize, parse_error);
+  // json_value* val = json_parse(fileContent, fsize);
   if (val == NULL) {
     *err = errContextFileJSONParseError;
     goto exit_fileContent;

@@ -5,7 +5,7 @@ CFLAGS = -g -Wall -fPIC
 
 .PHONY: default all clean
 
-default: $(TARGET)
+default: $(TARGET) libqtum.a
 all: default
 
 OBJECTS = $(patsubst %.c, %.o, $(wildcard *.c))
